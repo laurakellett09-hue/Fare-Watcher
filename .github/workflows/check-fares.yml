@@ -1,0 +1,42 @@
+name: Check fares
+
+on:
+  schedule:
+    - cron: "17 */2 * * *"   # every 2 hours (GitHub may start it a few minutes late)
+  workflow_dispatch: {}      # lets the app's "Check now" button start it
+  push:
+    paths: ["config.json"]   # re-check straight after you change Settings
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fare-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check fares and email 80+ deals
+        env:
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALERT_TO: ${{ secrets.ALERT_TO }}
+        run: python fare_watch.py
+
+      - name: Save results for the app
+        run: |
+          git config user.name "fare-watch-bot"
+          git config user.email "fare-watch-bot@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "Fare check $(date -u +'%Y-%m-%d %H:%M')"
+          git pull --rebase --autostash || true
+          git push

@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fare Watch</title>
+<meta name="theme-color" content="#123A5E">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fare Watch">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF3F8; --surface:#FFFFFF; --ink:#14212E; --muted:#5E6E7E; --line:#D3DDE7;
+  --navy:#123A5E; --sky:#2B6FD6; --go:#13865B; --go-bg:#E1F4EB; --mid:#A86F00; --mid-bg:#FBF0D6;
+  --low:#7A8794; --low-bg:#EDF0F3; --danger:#B3261E;
+  --display:"Bricolage Grotesque", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1620; --surface:#16232F; --ink:#E7EEF5; --muted:#93A3B3; --line:#2A3A49;
+    --navy:#9CC3EC; --sky:#6FA6F2; --go:#4FD39C; --go-bg:#123528; --mid:#F0C25A; --mid-bg:#3A2F12;
+    --low:#93A3B3; --low-bg:#22303D; --danger:#FF8A80;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+
+header.top{background:var(--navy);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 0 20px}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) header.top{background:#0A2440} }
+.top h1{font:800 30px/1.1 var(--display);margin:0;letter-spacing:-.01em}
+.top .sub{opacity:.82;margin-top:4px;font-size:15px}
+.top .row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;background:var(--sky);color:#fff}
+.btn.ghost{background:transparent;color:inherit;border:1.5px solid currentColor}
+.top .btn.ghost{color:#fff}
+.btn:disabled{opacity:.55;cursor:default}
+
+.banner{margin:14px 0 0;padding:12px 14px;border-radius:12px;background:var(--mid-bg);color:var(--ink);font-size:15px}
+.banner.err{background:#FBE3E1;color:#5B1712}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .banner.err{background:#3D1715;color:#FFD9D5} }
+
+.filters{display:flex;gap:8px;overflow-x:auto;padding:14px 0 4px;scrollbar-width:none}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:15px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.toggle{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:15px;padding:8px 0 4px}
+.toggle input{width:20px;height:20px;accent-color:var(--sky)}
+.count{color:var(--muted);font-size:15px;margin:6px 0 10px}
+
+/* Boarding pass */
+.pass{display:grid;grid-template-columns:1fr 108px;background:var(--surface);border-radius:16px;margin:0 0 14px;
+  box-shadow:0 1px 0 var(--line);position:relative;overflow:hidden}
+.pass .main{padding:14px 14px 14px 16px;min-width:0}
+.pass .stub{border-left:2px dashed var(--line);padding:14px 10px;text-align:center;display:flex;flex-direction:column;
+  justify-content:center;gap:2px;position:relative}
+.pass .stub::before,.pass .stub::after{content:"";position:absolute;left:-9px;width:16px;height:16px;border-radius:50%;background:var(--bg)}
+.pass .stub::before{top:-8px}.pass .stub::after{bottom:-8px}
+.codes{display:flex;align-items:baseline;gap:8px;font:800 28px/1 var(--display);letter-spacing:.01em}
+.codes .arrow{font-weight:500;color:var(--muted);font-size:20px}
+.place{color:var(--muted);font-size:14px;margin-top:2px}
+.when{margin-top:10px;font-weight:700}
+.meta{color:var(--muted);font-size:14px}
+.score{font:800 44px/1 var(--display);letter-spacing:-.02em}
+.score small{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
+.s-go .score{color:var(--go)} .s-go .stub{background:var(--go-bg)}
+.s-mid .score{color:var(--mid)} .s-mid .stub{background:var(--mid-bg)}
+.s-low .score{color:var(--low)} .s-low .stub{background:var(--low-bg)}
+.price{font:700 20px/1.1 var(--display);margin-top:6px}
+.usual{font-size:13px;color:var(--muted)}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:2px 7px;margin-left:6px;vertical-align:2px}
+.tag.new{background:var(--sky);color:#fff}
+.tag.lowdata{background:var(--low-bg);color:var(--muted)}
+.pass details{grid-column:1/-1;border-top:1px solid var(--line)}
+.pass summary{cursor:pointer;padding:10px 16px;color:var(--sky);font-weight:700;font-size:15px;list-style:none}
+.pass summary::-webkit-details-marker{display:none}
+.why{padding:0 16px 14px}
+.bar{display:grid;grid-template-columns:84px 1fr 44px;align-items:center;gap:8px;font-size:14px;margin:6px 0}
+.bar .track{height:8px;background:var(--low-bg);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--sky)}
+.bar span:last-child{text-align:right;color:var(--muted)}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.links a{color:var(--sky);font-weight:700}
+
+.empty{text-align:center;padding:40px 12px;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font:700 20px/1.3 var(--display);margin-bottom:6px}
+
+/* Settings */
+section.view{display:none}
+section.view.on{display:block}
+.group{background:var(--surface);border-radius:16px;padding:16px;margin:14px 0}
+.group h2{font:700 19px/1.2 var(--display);margin:0 0 4px}
+.group p.hint{color:var(--muted);font-size:14px;margin:0 0 12px}
+label.f{display:block;font-weight:700;font-size:15px;margin:12px 0 6px}
+input[type=text],input[type=number],input[type=month],input[type=password],select{
+  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.picked{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.picked .chip{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.picked .chip span{opacity:.7;margin-left:6px}
+.suggest{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.checks label{display:flex;gap:10px;align-items:center;padding:6px 0}
+.checks input{width:20px;height:20px;accent-color:var(--sky)}
+input[type=range]{width:100%;accent-color:var(--go)}
+.rangeval{font:800 28px/1 var(--display);color:var(--go)}
+.save{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));padding:10px 0;background:linear-gradient(transparent,var(--bg) 30%)}
+.save .btn{width:100%;padding:14px}
+.msg{margin-top:8px;font-size:15px}
+.msg.ok{color:var(--go)} .msg.bad{color:var(--danger)}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav.tabs button{flex:1;max-width:280px;border:0;background:none;padding:12px 0 14px;font-weight:700;color:var(--muted);cursor:pointer;font-size:16px}
+nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--sky)}
+@media (max-width:360px){ .pass{grid-template-columns:1fr 92px} .score{font-size:38px} .codes{font-size:24px} }
+@media (prefers-reduced-motion: no-preference){ .pass.flash{animation:land .5s ease-out} @keyframes land{from{transform:translateY(6px);opacity:0}} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <h1>Fare Watch</h1>
+        <div class="sub" id="subline">Loading fares…</div>
+      </div>
+      <button class="btn ghost" id="checkNow" type="button">Check now</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view on" id="view-deals" aria-label="Deals">
+    <div id="banners"></div>
+    <div class="filters" id="filters" role="group" aria-label="Filter by destination"></div>
+    <div class="filters" id="tripFilters" role="group" aria-label="Filter by trip type"></div>
+    <label class="toggle"><input type="checkbox" id="showAll"> Also show fares scoring under <span class="minScoreLabel">80</span></label>
+    <div class="count" id="count"></div>
+    <div id="list"></div>
+  </section>
+
+  <section class="view" id="view-settings" aria-label="Settings">
+    <div class="group">
+      <h2>Where to</h2>
+      <p class="hint">Flying from <b id="originLabel">MEL</b>. Pick up to 6 destinations so you stay within the free data limits.</p>
+      <div class="picked" id="pickedDest"></div>
+      <label class="f" for="destSearch">Add a destination</label>
+      <input type="text" id="destSearch" placeholder="City or code, e.g. Bali or DPS" autocomplete="off">
+      <div class="suggest" id="destSuggest"></div>
+    </div>
+
+    <div class="group">
+      <h2>When</h2>
+      <p class="hint">Any departure date inside this window counts. Up to 6 months are searched.</p>
+      <div class="two">
+        <div><label class="f" for="dateFrom">From</label><input type="month" id="dateFrom"></div>
+        <div><label class="f" for="dateTo">To</label><input type="month" id="dateTo"></div>
+      </div>
+      <div class="checks" style="margin-top:10px">
+        <label><input type="checkbox" id="tripReturn"> Return trips</label>
+        <label><input type="checkbox" id="tripOneway"> One-way trips</label>
+      </div>
+      <div class="two">
+        <div><label class="f" for="minDays">Shortest return trip (days)</label><input type="number" id="minDays" min="1" max="90"></div>
+        <div><label class="f" for="maxDays">Longest return trip (days)</label><input type="number" id="maxDays" min="1" max="120"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>What counts as a deal</h2>
+      <p class="hint">You get an email when a fare scores at or above this.</p>
+      <div style="display:flex;align-items:center;gap:14px">
+        <input type="range" id="minScore" min="50" max="95" step="1">
+        <span class="rangeval" id="minScoreVal">80</span>
+      </div>
+      <label class="f" for="maxPrice">Never show fares above (AUD, optional)</label>
+      <input type="number" id="maxPrice" min="0" placeholder="No limit">
+    </div>
+
+    <div class="group">
+      <h2>Airlines</h2>
+      <p class="hint">Preferred airlines score higher. Avoided airlines are hidden.</p>
+      <label class="f" for="prefAir">Preferred</label>
+      <select id="prefAir"><option value="">Add an airline…</option></select>
+      <div class="picked" id="prefPicked"></div>
+      <label class="f" for="avoidAir">Avoid</label>
+      <select id="avoidAir"><option value="">Add an airline…</option></select>
+      <div class="picked" id="avoidPicked"></div>
+    </div>
+
+    <div class="group">
+      <h2>Connect to GitHub</h2>
+      <p class="hint">Needed once per phone so Save and Check now work. The token is kept on this device only. See SETUP step 6.</p>
+      <label class="f" for="repo">Repository (username/repo)</label>
+      <input type="text" id="repo" placeholder="laura/fare-watch" autocomplete="off" autocapitalize="off">
+      <label class="f" for="token">GitHub token</label>
+      <input type="password" id="token" placeholder="github_pat_…" autocomplete="off">
+      <div class="links"><button class="btn ghost" type="button" id="forget" style="color:var(--muted)">Remove token from this phone</button></div>
+    </div>
+
+    <div class="save">
+      <button class="btn" type="button" id="saveBtn">Save settings</button>
+      <div class="msg" id="saveMsg" role="status"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-view="deals" type="button">Deals</button>
+  <button role="tab" aria-selected="false" data-view="settings" type="button">Settings</button>
+</nav>
+
+<script>
+const PLACES = [
+  ["SYD","Sydney"],["BNE","Brisbane"],["OOL","Gold Coast"],["PER","Perth"],["ADL","Adelaide"],["HBA","Hobart"],
+  ["LST","Launceston"],["CNS","Cairns"],["DRW","Darwin"],["CBR","Canberra"],["MCY","Sunshine Coast"],["AYQ","Uluru"],
+  ["DPS","Bali"],["SIN","Singapore"],["KUL","Kuala Lumpur"],["BKK","Bangkok"],["HKT","Phuket"],["SGN","Ho Chi Minh City"],
+  ["HAN","Hanoi"],["MNL","Manila"],["HKG","Hong Kong"],["TPE","Taipei"],["NRT","Tokyo Narita"],["HND","Tokyo Haneda"],
+  ["KIX","Osaka"],["ICN","Seoul"],["AKL","Auckland"],["CHC","Christchurch"],["ZQN","Queenstown"],["WLG","Wellington"],
+  ["NAN","Fiji (Nadi)"],["VLI","Vanuatu"],["NOU","New Caledonia"],["RAR","Rarotonga"],["HNL","Honolulu"],["LAX","Los Angeles"],
+  ["SFO","San Francisco"],["JFK","New York"],["YVR","Vancouver"],["LHR","London"],["CDG","Paris"],["FCO","Rome"],
+  ["DXB","Dubai"],["DOH","Doha"],["CMB","Colombo"],["DEL","Delhi"],["BOM","Mumbai"]
+];
+const AIRLINES = {QF:"Qantas",VA:"Virgin Australia",JQ:"Jetstar",ZL:"Rex",NZ:"Air New Zealand",SQ:"Singapore Airlines",
+  TR:"Scoot",CX:"Cathay Pacific",EK:"Emirates",QR:"Qatar Airways",EY:"Etihad",MH:"Malaysia Airlines",D7:"AirAsia X",
+  GA:"Garuda Indonesia",TG:"Thai Airways",VN:"Vietnam Airlines",VJ:"VietJet",NH:"ANA",JL:"Japan Airlines",KE:"Korean Air",
+  CI:"China Airlines",BR:"EVA Air",PR:"Philippine Airlines",FJ:"Fiji Airways",UA:"United",DL:"Delta",AA:"American",
+  AC:"Air Canada",HA:"Hawaiian",MU:"China Eastern",CZ:"China Southern",AI:"Air India",UL:"SriLankan",TK:"Turkish Airlines",BA:"British Airways"};
+
+const $ = s => document.querySelector(s);
+const store = {
+  get(k){ try{ return localStorage.getItem(k) }catch(e){ return null } },
+  set(k,v){ try{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k,v) }catch(e){} }
+};
+let data = null, cfg = null, destFilter = "all", tripFilter = "all";
+
+/* ---------- repo detection ---------- */
+function guessRepo(){
+  const saved = store.get("fw_repo"); if (saved) return saved;
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+  const path = location.pathname.split("/").filter(Boolean)[0];
+  return (m && path) ? `${m[1]}/${path}` : "";
+}
+
+/* ---------- loading ---------- */
+async function loadJSON(path){
+  const r = await fetch(path + "?t=" + Date.now(), {cache:"no-store"});
+  if (!r.ok) throw new Error(path + " " + r.status);
+  return r.json();
+}
+async function load(){
+  try { cfg = await loadJSON("config.json"); } catch(e){ cfg = null; }
+  try { data = await loadJSON("data/deals.json"); } catch(e){ data = null; }
+  renderDeals(); fillSettings();
+}
+
+/* ---------- deals view ---------- */
+function band(s, min){ return s >= min ? "s-go" : s >= min - 20 ? "s-mid" : "s-low"; }
+function fmtDate(iso){ if(!iso) return ""; const d = new Date(iso+"T00:00:00");
+  return d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}); }
+function ago(iso){ const m = Math.round((Date.now()-new Date(iso))/60000);
+  if (m < 2) return "just now"; if (m < 60) return m+" min ago"; const h = Math.round(m/60);
+  return h < 36 ? h+" hr ago" : Math.round(h/24)+" days ago"; }
+function money(n){ return "$" + Math.round(n).toLocaleString("en-AU"); }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function renderDeals(){
+  const banners = $("#banners"); banners.innerHTML = "";
+  const min = (data && data.min_score) || (cfg && cfg.min_score) || 80;
+  document.querySelectorAll(".minScoreLabel").forEach(e=>e.textContent=min);
+
+  if (!data){
+    $("#subline").textContent = "No results yet";
+    $("#list").innerHTML = `<div class="empty"><b>No fare results yet</b>Add destinations in Settings, then tap Check now. Results appear a few minutes after each check.</div>`;
+    $("#filters").innerHTML = $("#tripFilters").innerHTML = ""; $("#count").textContent = ""; return;
+  }
+  $("#subline").textContent = `From ${data.origin || "MEL"} · checked ${ago(data.updated)}`;
+  if (data.status && data.status.demo)
+    banners.innerHTML += `<div class="banner">These are made-up sample fares so you can see how the app works. Real fares replace them after your first check.</div>`;
+  if (data.status && data.status.errors && data.status.errors.length)
+    banners.innerHTML += `<div class="banner err">${data.status.errors.length} search(es) failed last check. First error: ${esc(data.status.errors[0])}</div>`;
+
+  const deals = data.deals || [];
+  if (!deals.length){
+    const note = (data.status && data.status.note) || "No fares came back for your destinations and dates. Try a wider date window or another destination.";
+    $("#list").innerHTML = `<div class="empty"><b>Nothing to show yet</b>${esc(note)}</div>`;
+    $("#filters").innerHTML = $("#tripFilters").innerHTML = ""; $("#count").textContent = ""; return;
+  }
+
+  const dests = [...new Map(deals.map(d=>[d.dest,d.dest_name])).entries()];
+  $("#filters").innerHTML = [["all","All destinations"],...dests].map(([c,n]) =>
+    `<button class="chip" type="button" data-dest="${esc(c)}" aria-pressed="${destFilter===c}">${esc(n)}</button>`).join("");
+  $("#tripFilters").innerHTML = [["all","Return and one-way"],["return","Return"],["one_way","One-way"]].map(([c,n]) =>
+    `<button class="chip" type="button" data-trip="${c}" aria-pressed="${tripFilter===c}">${n}</button>`).join("");
+
+  const showAll = $("#showAll").checked;
+  const shown = deals.filter(d => (showAll || d.score >= min) && (destFilter==="all" || d.dest===destFilter)
+    && (tripFilter==="all" || d.trip===tripFilter));
+  const good = deals.filter(d=>d.score>=min).length;
+  $("#count").textContent = showAll ? `${shown.length} fares shown · ${good} score ${min}+`
+                                    : `${shown.length} fare${shown.length===1?"":"s"} scoring ${min}+`;
+  if (!shown.length){
+    $("#list").innerHTML = `<div class="empty"><b>No fares at ${min}+ right now</b>You’ll get an email when one appears. Turn on “Also show fares scoring under ${min}” to see what’s out there.</div>`;
+    return;
+  }
+  $("#list").innerHTML = shown.slice(0,120).map(d => {
+    const stops = Math.max(d.stops, d.return_stops||0);
+    const stopTxt = stops===0 ? "Direct" : `${stops} stop${stops>1?"s":""}`;
+    const when = d.trip==="return" ? `${fmtDate(d.depart)} → ${fmtDate(d.return)}` : `${fmtDate(d.depart)} · one-way`;
+    const nights = d.trip==="return" ? ` · ${Math.round((new Date(d.return)-new Date(d.depart))/864e5)} days` : "";
+    const b = d.breakdown || {};
+    const bar = (label,v,max)=>`<div class="bar"><span>${label}</span><div class="track"><div class="fill" style="width:${Math.round(100*v/max)}%"></div></div><span>${v}/${max}</span></div>`;
+    const savings = d.savings_pct >= 0 ? `${d.savings_pct}% under usual` : `${-d.savings_pct}% over usual`;
+    return `<article class="pass ${band(d.score,min)}">
+      <div class="main">
+        <div class="codes">${esc(d.origin)}<span class="arrow">→</span>${esc(d.dest)}${d.new?'<span class="tag new">New</span>':''}${d.confidence==="low"?'<span class="tag lowdata">Little price history</span>':''}</div>
+        <div class="place">${esc(d.dest_name)}</div>
+        <div class="when">${when}</div>
+        <div class="meta">${esc(d.airline_name)} · ${stopTxt}${nights}</div>
+      </div>
+      <div class="stub">
+        <div class="score">${d.score}<small>/100</small></div>
+        <div class="price">${money(d.price)}</div>
+        <div class="usual">usually ${money(d.usual)}</div>
+      </div>
+      <details>
+        <summary>Why ${d.score}? · ${savings}</summary>
+        <div class="why">
+          ${bar("Price",b.price??0,60)}${bar("Airline",b.airline??0,15)}${bar("Stops",b.stops??0,15)}${bar("Flight time",b.duration??0,10)}
+          <div class="links">
+            ${d.link?`<a href="${esc(d.link)}" target="_blank" rel="noopener">See this fare</a>`:""}
+            <a href="${esc(d.google_link)}" target="_blank" rel="noopener">Compare on Google Flights</a>
+          </div>
+        </div>
+      </details>
+    </article>`;
+  }).join("");
+}
+
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-dest]"); if (c){ destFilter = c.dataset.dest; renderDeals(); }
+  const t = e.target.closest("[data-trip]"); if (t){ tripFilter = t.dataset.trip; renderDeals(); }
+});
+$("#showAll").addEventListener("change", renderDeals);
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-selected", x===b));
+  document.querySelectorAll("section.view").forEach(v=>v.classList.toggle("on", v.id==="view-"+b.dataset.view));
+  store.set("fw_tab", b.dataset.view); window.scrollTo(0,0);
+}));
+
+/* ---------- settings ---------- */
+let draft = null;
+function defaults(){ const d = new Date(); const m = d.getMonth()+1;
+  const ym = (y,mm)=>`${y}-${String(mm).padStart(2,"0")}`;
+  return {origin:"MEL",destinations:[],date_from:ym(d.getFullYear(), m),date_to:ym(d.getFullYear()+(m+4>12?1:0), ((m+3)%12)+1),
+    trip_types:["return","one_way"],return_min_days:4,return_max_days:21,min_score:80,max_price:null,
+    preferred_airlines:[],avoid_airlines:[],currency:"aud"}; }
+function fillSettings(){
+  draft = JSON.parse(JSON.stringify(Object.assign(defaults(), cfg||{})));
+  $("#originLabel").textContent = draft.origin;
+  $("#dateFrom").value = draft.date_from; $("#dateTo").value = draft.date_to;
+  $("#tripReturn").checked = draft.trip_types.includes("return");
+  $("#tripOneway").checked = draft.trip_types.includes("one_way");
+  $("#minDays").value = draft.return_min_days; $("#maxDays").value = draft.return_max_days;
+  $("#minScore").value = draft.min_score; $("#minScoreVal").textContent = draft.min_score;
+  $("#maxPrice").value = draft.max_price ?? "";
+  $("#repo").value = guessRepo(); $("#token").value = store.get("fw_token") || "";
+  const opts = Object.entries(AIRLINES).sort((a,b)=>a[1].localeCompare(b[1])).map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
+  $("#prefAir").innerHTML = `<option value="">Add an airline…</option>`+opts;
+  $("#avoidAir").innerHTML = `<option value="">Add an airline…</option>`+opts;
+  drawPicked(); suggest("");
+}
+function drawPicked(){
+  $("#pickedDest").innerHTML = draft.destinations.length ? draft.destinations.map((d,i)=>
+    `<button class="chip" type="button" data-rm-dest="${i}" aria-label="Remove ${esc(d.name)}">${esc(d.name)}<span>${esc(d.code)} ✕</span></button>`).join("")
+    : `<span style="color:var(--muted)">No destinations yet.</span>`;
+  const air = (list,key)=> list.length ? list.map(c=>`<button class="chip" type="button" data-rm-${key}="${c}" aria-label="Remove ${esc(AIRLINES[c]||c)}">${esc(AIRLINES[c]||c)}<span>✕</span></button>`).join("") : "";
+  $("#prefPicked").innerHTML = air(draft.preferred_airlines,"pref");
+  $("#avoidPicked").innerHTML = air(draft.avoid_airlines,"avoid");
+}
+function suggest(q){
+  q = q.trim().toLowerCase();
+  const have = new Set(draft.destinations.map(d=>d.code));
+  let list = PLACES.filter(([c,n]) => !have.has(c) && (!q || n.toLowerCase().includes(q) || c.toLowerCase().startsWith(q)));
+  if (q.length===3 && /^[a-z]{3}$/.test(q) && !PLACES.some(p=>p[0].toLowerCase()===q)) list.unshift([q.toUpperCase(), q.toUpperCase()]);
+  $("#destSuggest").innerHTML = list.slice(0, q ? 12 : 10).map(([c,n]) =>
+    `<button class="chip" type="button" data-add-dest="${c}" data-name="${esc(n)}">${esc(n)} <span style="color:var(--muted)">${c}</span></button>`).join("");
+}
+$("#destSearch").addEventListener("input", e=>suggest(e.target.value));
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-add-dest]");
+  if (a){ if (draft.destinations.length >= 6){ msg("You can watch up to 6 destinations. Remove one first.", false); return; }
+    draft.destinations.push({code:a.dataset.addDest, name:a.dataset.name}); $("#destSearch").value=""; drawPicked(); suggest(""); }
+  const r = e.target.closest("[data-rm-dest]"); if (r){ draft.destinations.splice(+r.dataset.rmDest,1); drawPicked(); suggest($("#destSearch").value); }
+  const p = e.target.closest("[data-rm-pref]"); if (p){ draft.preferred_airlines = draft.preferred_airlines.filter(c=>c!==p.dataset.rmPref); drawPicked(); }
+  const v = e.target.closest("[data-rm-avoid]"); if (v){ draft.avoid_airlines = draft.avoid_airlines.filter(c=>c!==v.dataset.rmAvoid); drawPicked(); }
+});
+$("#prefAir").addEventListener("change", e=>{ const c=e.target.value; if(c && !draft.preferred_airlines.includes(c)){ draft.preferred_airlines.push(c); draft.avoid_airlines=draft.avoid_airlines.filter(x=>x!==c);} e.target.value=""; drawPicked(); });
+$("#avoidAir").addEventListener("change", e=>{ const c=e.target.value; if(c && !draft.avoid_airlines.includes(c)){ draft.avoid_airlines.push(c); draft.preferred_airlines=draft.preferred_airlines.filter(x=>x!==c);} e.target.value=""; drawPicked(); });
+$("#minScore").addEventListener("input", e=>$("#minScoreVal").textContent=e.target.value);
+$("#forget").addEventListener("click", ()=>{ store.set("fw_token",null); $("#token").value=""; msg("Token removed from this phone.", true); });
+
+function msg(t, ok){ const m = $("#saveMsg"); m.textContent = t; m.className = "msg " + (ok?"ok":"bad"); }
+
+function collect(){
+  const types = []; if ($("#tripReturn").checked) types.push("return"); if ($("#tripOneway").checked) types.push("one_way");
+  const out = Object.assign({}, draft, {
+    date_from: $("#dateFrom").value, date_to: $("#dateTo").value, trip_types: types,
+    return_min_days: +$("#minDays").value || 1, return_max_days: +$("#maxDays").value || 30,
+    min_score: +$("#minScore").value, max_price: $("#maxPrice").value ? +$("#maxPrice").value : null });
+  if (!types.length) throw new Error("Tick Return trips, One-way trips, or both.");
+  if (!out.date_from || !out.date_to || out.date_from > out.date_to) throw new Error("Set a From month that is before the To month.");
+  if (out.return_min_days > out.return_max_days) throw new Error("The shortest trip can’t be longer than the longest trip.");
+  return out;
+}
+function creds(){
+  const repo = $("#repo").value.trim(), token = $("#token").value.trim();
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !token) throw new Error("Add your repository and GitHub token under Connect to GitHub first.");
+  store.set("fw_repo", repo); store.set("fw_token", token);
+  return {repo, headers:{Authorization:"Bearer "+token, Accept:"application/vnd.github+json"}};
+}
+async function gh(url, opts){ const r = await fetch(url, opts); if (!r.ok){ let t=""; try{ t=(await r.json()).message }catch(e){}
+  throw new Error(r.status===401 ? "GitHub didn’t accept the token. Check it hasn’t expired." :
+                  r.status===404 ? "GitHub couldn’t find that repository, or the token can’t access it." : `GitHub error ${r.status}: ${t}`); }
+  return r.status===204 ? null : r.json(); }
+
+$("#saveBtn").addEventListener("click", async () => {
+  const btn = $("#saveBtn"); btn.disabled = true; msg("Saving…", true);
+  try {
+    const conf = collect(); const {repo, headers} = creds();
+    const url = `https://api.github.com/repos/${repo}/contents/config.json`;
+    const cur = await gh(url, {headers});
+    const body = JSON.stringify(conf, null, 2) + "\n";
+    await gh(url, {method:"PUT", headers, body: JSON.stringify({
+      message: "Update fare watch settings", sha: cur.sha,
+      content: btoa(unescape(encodeURIComponent(body))) })});
+    cfg = conf; msg("Saved. A fresh check starts now; new results show in about 5 minutes.", true);
+  } catch(e){ msg(e.message, false); }
+  btn.disabled = false;
+});
+
+$("#checkNow").addEventListener("click", async () => {
+  const btn = $("#checkNow"); btn.disabled = true; btn.textContent = "Starting…";
+  try {
+    const {repo, headers} = creds();
+    await gh(`https://api.github.com/repos/${repo}/actions/workflows/check-fares.yml/dispatches`,
+      {method:"POST", headers, body: JSON.stringify({ref:"main"})});
+    btn.textContent = "Checking…";
+    $("#subline").textContent = "Check started. Pull to refresh in about 5 minutes.";
+    setTimeout(()=>{ btn.textContent="Check now"; btn.disabled=false; load(); }, 300000);
+  } catch(e){
+    btn.textContent = "Check now"; btn.disabled = false;
+    document.querySelector('nav.tabs [data-view="settings"]').click(); msg(e.message, false);
+  }
+});
+
+if (store.get("fw_tab")==="settings") document.querySelector('nav.tabs [data-view="settings"]').click();
+load();
+</script>
+</body>
+</html>

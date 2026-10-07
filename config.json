@@ -1,0 +1,17 @@
+{
+  "origin": "MEL",
+  "destinations": [],
+  "date_from": "2026-11",
+  "date_to": "2027-03",
+  "trip_types": [
+    "return",
+    "one_way"
+  ],
+  "return_min_days": 4,
+  "return_max_days": 21,
+  "min_score": 80,
+  "max_price": null,
+  "preferred_airlines": [],
+  "avoid_airlines": [],
+  "currency": "aud"
+}
